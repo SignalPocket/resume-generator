@@ -13,5 +13,9 @@ text='\n'.join(p.extract_text() for p in reader.pages)
 assert all(part in text for part in ['Example Candidate','Dear Hiring Team,','Sincerely,','fictional letter'])
 assert text.index('Dear Hiring Team,') < text.index('Sincerely,')
 assert '**' not in text
-assert len(reader.pages[0].get('/Annots',[]))==2
+expected={h.url for p in doc.paragraphs for h in p.hyperlinks}
+actual={str(a.get_object().get('/A',{}).get('/URI','')) for page in reader.pages for a in page.get('/Annots',[])}
+# LibreOffice may add an email link or split a wrapped link into annotations.
+# Assert the actual destinations survive instead of counting rectangles.
+assert expected <= actual, f'Missing link destinations: {expected - actual}'
 print('Fictional cover letter verified: one page, 1.15 spacing, left alignment and links')
