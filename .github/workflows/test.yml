@@ -35,7 +35,7 @@ jobs:
       - name: Install Greenhouse PDF publishing tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation poppler-utils
+          sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation fonts-crosextra-carlito poppler-utils
       - run: node src/cli.mjs build examples/resume.md --application sample
       - run: node src/cli.mjs build examples/cover-letter.md --type cover-letter --application sample-letter
       - name: Verify fictional Notion preparation and complete Word PDF return path
