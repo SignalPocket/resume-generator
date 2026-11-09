@@ -1,0 +1,11 @@
+{
+  "font": "Arial",
+  "bodySize": 10,
+  "nameSize": 18,
+  "sectionSize": 11,
+  "marginInches": 0.65,
+  "paragraphAfterPt": 4,
+  "sectionBeforePt": 9,
+  "lineSpacing": 1.05,
+  "maxPages": 2
+}

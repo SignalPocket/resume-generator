@@ -1,0 +1,13 @@
+{
+  "name": "resume-generator",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Markdown to Word and PDF resumes and cover letters",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test",
+    "build:sample": "node src/cli.mjs build examples/resume.md --application sample",
+    "check:sample": "node src/cli.mjs check examples/resume.md"
+  }
+}

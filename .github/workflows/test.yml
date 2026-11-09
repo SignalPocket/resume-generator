@@ -1,0 +1,53 @@
+name: Test generator
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - run: node --test
+      - run: node src/cli.mjs check examples/resume.md
+
+  build-word-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - name: Install Greenhouse PDF publishing tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation poppler-utils
+      - run: node src/cli.mjs build examples/resume.md --application sample
+      - run: node src/cli.mjs build examples/cover-letter.md --type cover-letter --application sample-letter
+      - name: Verify output text, links and pagination
+        run: python test/verify_pdf.py outputs/sample/v001
+      - name: Verify cover-letter output
+        run: python test/verify_cover_letter.py outputs/sample-letter/v001
+      - name: Render pages for visual review
+        run: pdftoppm -png -scale-to 1600 outputs/sample/v001/resume.pdf outputs/sample/v001/page
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sample-word-pdf
+          path: outputs/sample/v001/
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sample-cover-letter
+          path: outputs/sample-letter/v001/
+          retention-days: 7

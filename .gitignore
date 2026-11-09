@@ -1,0 +1,12 @@
+node_modules/
+outputs/
+applications/
+*.tmp
+.DS_Store
+__pycache__/
+.venv/
+.env
+.env.*
+*.docx
+*.pdf
+*.zip

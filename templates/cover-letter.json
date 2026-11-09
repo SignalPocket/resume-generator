@@ -1,0 +1,12 @@
+{
+  "documentType": "cover-letter",
+  "font": "Arial",
+  "bodySize": 11,
+  "nameSize": 14,
+  "sectionSize": 12,
+  "marginInches": 1,
+  "paragraphAfterPt": 8,
+  "sectionBeforePt": 6,
+  "lineSpacing": 1.15,
+  "maxPages": 1
+}

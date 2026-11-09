@@ -1,0 +1,54 @@
+name: Fictional reference round trips
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  roundtrip:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        kind: [resume, cover-letter]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install publishing tools
+        run: |
+          python -m pip install -r requirements.txt pillow==11.3.0
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation fonts-crosextra-carlito fonts-dejavu-core poppler-utils
+      - name: Create fictional reference
+        env:
+          KIND: ${{ matrix.kind }}
+        run: |
+          if [ "$KIND" = 'cover-letter' ]; then
+            python scripts/make-fictional-reference.py outputs/reference/v001/cover-letter.docx
+          else
+            node src/cli.mjs build examples/resume.md --application reference --docx-only
+          fi
+      - name: Import reference into Markdown and build Word and PDF
+        env:
+          KIND: ${{ matrix.kind }}
+        run: |
+          node src/cli.mjs import "outputs/reference/v001/$KIND.docx" --type "$KIND" --out outputs/imported
+          node src/cli.mjs build "outputs/imported/$KIND.md" --template outputs/imported/template.json --application roundtrip
+          python test/verify_roundtrip.py outputs/roundtrip/v001
+          python src/document.py pdf --docx "outputs/reference/v001/$KIND.docx" --pdf outputs/roundtrip/v001/reference.pdf --result outputs/roundtrip/v001/reference-render.json
+      - name: Render and compare every page
+        env:
+          KIND: ${{ matrix.kind }}
+        run: |
+          mkdir -p outputs/roundtrip/v001/qa/reference outputs/roundtrip/v001/qa/generated
+          pdftoppm -r 120 -png outputs/roundtrip/v001/reference.pdf outputs/roundtrip/v001/qa/reference/page
+          pdftoppm -r 120 -png "outputs/roundtrip/v001/$KIND.pdf" outputs/roundtrip/v001/qa/generated/page
+          python test/verify_roundtrip.py outputs/roundtrip/v001 --images
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fictional-${{ matrix.kind }}-roundtrip
+          path: outputs/roundtrip/v001/
+          retention-days: 7
