@@ -1,6 +1,6 @@
 # ResumeGenerator
 
-Generate Word resumes and cover letters with matching PDFs from reviewed Markdown. Formatting lives in reusable templates. **python-docx generates Word, then headless LibreOffice converts that file to PDF**. Microsoft Word is not required. No AI calls or npm dependencies.
+Turn Markdown of resumes and cover letters into Word and PDF formats. Formatting lives in reusable templates. **python-docx generates Word, then headless LibreOffice converts that file to PDF**. Microsoft Word is not required. No AI calls or npm dependencies.
 
 ## Quick start
 
