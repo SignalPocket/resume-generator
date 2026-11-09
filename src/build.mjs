@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir, rm, copyFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
-import { resolve, join, dirname } from 'node:path';
+import { resolve, join, dirname, basename, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import { runPython } from './python.mjs';
@@ -13,6 +13,16 @@ export const coverLetterTemplate = join(root, 'templates', 'cover-letter.json');
 const sha256 = data => createHash('sha256').update(data).digest('hex');
 
 export async function loadInput(source, template, documentType) {
+  if (!template) {
+    const sourcePath = source instanceof URL ? fileURLToPath(source) : resolve(source);
+    const sidecar = join(dirname(sourcePath), `${basename(sourcePath, extname(sourcePath))}.template.json`);
+    try {
+      await readFile(sidecar, 'utf8');
+      template = sidecar;
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
   template ??= documentType === 'cover-letter' ? coverLetterTemplate : defaultTemplate;
   const sourceText = await readFile(source, 'utf8');
   const templateText = await readFile(template, 'utf8');
@@ -61,7 +71,7 @@ export async function build({ source, application, output = join(root,'outputs')
     if (docxOnly) warnings.push('PDF and page count not checked');
     if (rendering.pages > input.settings.maxPages) warnings.push(`Document has ${rendering.pages} pages; template target is ${input.settings.maxPages}. Edit content or add an explicit page break; no text was removed or shrunk.`);
     const manifest = {
-      generatorVersion:'0.3.0', documentType:input.settings.documentType, application, createdAt:new Date().toISOString(),
+      generatorVersion:'0.4.0', documentType:input.settings.documentType, application, createdAt:new Date().toISOString(),
       sourceSha256:sha256(input.sourceText), templateSha256:sha256(input.templateText),
       ...(input.reference ? {referenceSha256:sha256(input.reference)} : {}),
       docxSha256:sha256(docx), ...rendering, warnings,

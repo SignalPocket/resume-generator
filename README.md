@@ -2,6 +2,20 @@
 
 Turn Markdown of resumes and cover letters into Word and PDF formats. Formatting lives in reusable templates. **python-docx generates Word, then headless LibreOffice converts that file to PDF**. Microsoft Word is not required. No AI calls or npm dependencies.
 
+## Get your own copy
+
+- **[Download ZIP](https://github.com/SignalPocket/resume-generator/archive/refs/heads/main.zip)** to run locally.
+- **[Fork the code](https://github.com/SignalPocket/resume-generator/fork)** to contribute changes or keep a public code copy.
+- **For phone-to-Notion generation**, copy the clean source into your own **private** repository and follow [the setup guide](NOTION_WORKFLOW.md). Public forks cannot run personal package generation.
+
+The public source contains fictional examples only. Bring your own resume, cover letter, templates, Notion pages and connection. No applicant data or credentials are bundled.
+
+## Generate from your phone
+
+Once configured, ask a connected assistant to prepare your reviewed package and trigger the private runner, or start it from GitHub Actions on your phone. The runner reads your exact sources from Notion and attaches **resume.docx, resume.pdf, cover-letter.docx and cover-letter.pdf** back to the application page. Your computer can be off. It checks source hashes, complete output text and page targets, and avoids duplicate attachments on serial retries. It never submits a job application.
+
+Read **[setup, permissions, phone instructions and troubleshooting](NOTION_WORKFLOW.md)**. Optional [assistant instructions](docs/PHONE_ASSISTANT.md) explain the connected-app handoff. There is no hosted public service, built-in AI writer or universal chat-app integration.
+
 ## Quick start
 
 Requires Node.js 22 or newer, Python 3.12 or newer, and LibreOffice Writer for PDF export. Install the Python packages once:
@@ -39,7 +53,7 @@ node src/cli.mjs build applications/company-reference/resume.md --template appli
 
 The importer makes a Markdown copy, a template profile and an unchanged `reference.docx`. The original stays untouched. Imported formatting uses the reference's paragraph components, numbering, styles, theme, settings and page geometry. Those package parts are retained byte-for-byte. All visible body text comes from Markdown, including bold lead-ins and clickable links. Nonbreaking hyphens remain visible Unicode in Markdown and are restored as Word nonbreaking-hyphen elements.
 
-This reference importer currently handles the approved resume's single-section, single-column structure: a name/contact block, paragraphs, Heading 2 sections, Heading 3 roles, Heading 4 employer/date lines, and bullets. It rejects tables, comments, revisions, fields, drawings, controls, blank body paragraphs, unequal margins, or ambiguous inline syntax for manual review. It does not claim to import arbitrary Word layouts. `####` represents the separate employer/date line in imported Markdown.
+This reference importer supports a clean single-section, single-column resume: a combined or separate name/contact block (the name may use Heading 1), paragraphs, Heading 2 sections, Heading 3 roles, Heading 4 employer/date lines, and bullets. It rejects tables, comments, revisions, fields, drawings, controls, blank body paragraphs, unequal margins, or ambiguous inline syntax for manual review. It does not claim to import arbitrary Word layouts. `####` represents the separate employer/date line in imported Markdown.
 
 Reference builds save the reference and its checksum alongside each version. Changing a generic numeric template setting does not restyle a reference build: reference formatting controls that mode. Adjust the reference components intentionally when changing its design.
 
@@ -87,7 +101,7 @@ Letter versions contain `cover-letter.docx`, `cover-letter.pdf`, `cover-letter.t
 
 ## Formatting and versions
 
-`templates/default.json` controls Arial typography, US Letter margins and spacing. No automatic shrinking or content deletion is used to meet the page target. Review long resumes and add a deliberate page break when needed.
+`templates/default.json` controls Calibri typography, US Letter margins and spacing. No automatic shrinking or content deletion is used to meet the page target. Review long resumes and add a deliberate page break when needed.
 
 Every successful build creates a new `outputs/company-role/v001`, `v002`, etc. Each contains `resume.docx`, `resume.pdf` (unless DOCX-only), the original `source.md`, `template.json`, readable `resume.txt`, and a `manifest.json` recording hashes, timestamp, generator version, renderer, page count and warnings.
 
@@ -95,7 +109,7 @@ Builds never overwrite saved versions. PDF export runs LibreOffice headlessly wi
 
 Application names allow letters, numbers, hyphens and underscores, must start with a letter or number, and cannot be reserved Windows device names. `applications/`, `outputs/`, local environment files, Word documents, PDFs and ZIP files are ignored by Git. Keep personal content in those local directories. Gitignore does not remove anything already committed; never publish an existing private history without reviewing every branch and build artifact.
 
-The public examples are fictional. Run `node scripts/check-public-package.mjs` before publishing a source snapshot. It checks tracked file paths and non-example email addresses; it does not replace a review of history, hidden document metadata, repository settings or account association.
+The public examples are fictional. Run `node scripts/check-public-package.mjs` before publishing a source snapshot. The public CI also checks the source package; personal generation uses a separate workflow without document artifacts. It checks tracked file paths and non-example email addresses; it does not replace a review of history, hidden document metadata, repository settings or account association.
 
 ## Validation status
 
@@ -105,7 +119,22 @@ GitHub Actions also installs the same headless publishing tools used by Greenhou
 
 The publishing approach follows an existing docs-as-code portfolio workflow, adapted to application documents. Fictional resume and cover-letter examples and reference round-trip checks are included.
 
-## First version limits
+## Source profiles and limits
 
-This is a command-line formatter with a small Markdown dialect. It does not include a graphical editor, automated job-posting analysis or Notion integration. It does not tailor claims, replace canonical documents, upload files or submit applications. Select and review factual content before generating a version.
+Save `resume.template.json` beside `resume.md` (or `cover-letter.template.json` beside `cover-letter.md`) to select a design automatically. An explicit `--template` overrides the sidecar. Invalid profiles fail rather than falling back silently. Reference paths resolve relative to their profile.
 
+This is a formatter with a small Markdown dialect, not a graphical editor or a job-posting analyzer. The optional Notion workflow uploads sources and attaches generated documents; it does not tailor claims or submit applications. Review wording, rights to any samples and actual final pages before use. Font substitution can change pagination between computers.
+
+## Tests
+
+```bash
+npm test
+npm run check:public
+node scripts/verify-notion-roundtrip.mjs
+```
+
+The last command requires LibreOffice and exercises the complete preparation/conversion/attachment path with fictional files and an in-memory Notion service. It needs no token, makes no network calls and does not establish that your own Notion connection is configured. CI runs it on Linux, alongside reference round-trip checks and Windows/Linux unit tests. Test a fictional page in your own private setup before processing real applications.
+
+## License
+
+[MIT](LICENSE). You may download, use, modify and redistribute the code under that license. Runtime dependencies retain their own licenses.

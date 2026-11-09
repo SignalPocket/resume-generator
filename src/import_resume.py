@@ -91,7 +91,8 @@ def import_resume(source, destination, document_type='resume'):
     if any(p.text.strip() for s in doc.sections for part in (s.header, s.footer) for p in part.paragraphs):
         raise ValueError('Reference has header/footer text; review its preservation before importing')
     letter = document_type == 'cover-letter'
-    heading_offset = min([int(p.style.name[-1]) for p in doc.paragraphs if p.style.name.startswith('Heading ')] or [2])
+    # The name may itself use Heading 1; it is not a body section.
+    heading_offset = min([int(p.style.name[-1]) for p in doc.paragraphs[1:] if p.style.name.startswith('Heading ')] or [2])
     header = [] if letter else split_header(segments(doc.paragraphs[0]))
     lines = [] if letter else ['# ' + header[0], *header[1:]]
     for p in (doc.paragraphs if letter else doc.paragraphs[1:]):

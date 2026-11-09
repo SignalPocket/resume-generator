@@ -1,0 +1,56 @@
+name: Generate Notion application package
+on:
+  workflow_dispatch:
+    inputs:
+      notion_page_id:
+        description: Your Notion page UUID containing a reviewed package request
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths: ['requests/generate.json']
+permissions:
+  contents: read
+concurrency:
+  group: notion-application-generation
+  cancel-in-progress: false
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Require a private working repository
+        env:
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          if [ "$REPOSITORY_PRIVATE" != "true" ]; then
+            echo 'Personal generation requires a private repository. See NOTION_WORKFLOW.md.'
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install document conversion tools
+        run: |
+          python -m pip install -r requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation fonts-crosextra-carlito poppler-utils
+      - name: Select page without printing private content
+        env:
+          MANUAL_PAGE_ID: ${{ inputs.notion_page_id }}
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          const id = process.env.MANUAL_PAGE_ID || JSON.parse(readFileSync('requests/generate.json','utf8')).notionPageId;
+          if (!/^[a-f0-9]{8}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{12}$/i.test(id ?? '')) throw new Error('Invalid Notion page UUID');
+          appendFileSync(process.env.GITHUB_ENV, `NOTION_PAGE_ID=${id}\n`);
+          JS
+      - name: Generate Word and PDF and return all four files to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: node src/notion-package.mjs
+      # No personal sources or outputs are uploaded as Actions artifacts.

@@ -1,6 +1,6 @@
 {
   "name": "resume-generator",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "Markdown to Word and PDF resumes and cover letters",
@@ -8,6 +8,9 @@
   "scripts": {
     "test": "node --test",
     "build:sample": "node src/cli.mjs build examples/resume.md --application sample",
-    "check:sample": "node src/cli.mjs check examples/resume.md"
+    "check:sample": "node src/cli.mjs check examples/resume.md",
+    "prepare:notion": "node src/prepare-notion.mjs",
+    "generate:notion": "node src/notion-package.mjs",
+    "check:public": "node scripts/check-public-package.mjs"
   }
 }
