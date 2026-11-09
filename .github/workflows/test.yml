@@ -16,6 +16,9 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r requirements.txt
       - run: node --test
+      - name: Check public source package
+        if: github.event.repository.private == false
+        run: node scripts/check-public-package.mjs
       - run: node src/cli.mjs check examples/resume.md
 
   build-word-pdf:
@@ -32,9 +35,11 @@ jobs:
       - name: Install Greenhouse PDF publishing tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation poppler-utils
+          sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation fonts-crosextra-carlito poppler-utils
       - run: node src/cli.mjs build examples/resume.md --application sample
       - run: node src/cli.mjs build examples/cover-letter.md --type cover-letter --application sample-letter
+      - name: Verify fictional Notion preparation and complete Word PDF return path
+        run: node scripts/verify-notion-roundtrip.mjs
       - name: Verify output text, links and pagination
         run: python test/verify_pdf.py outputs/sample/v001
       - name: Verify cover-letter output

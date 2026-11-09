@@ -149,6 +149,32 @@ test('cover letters preserve hard breaks and blank slots without resume headings
   assert.throws(()=>parseMarkdown('Dear Hiring Team,\n\nBody.'),/candidate name/);
 });
 
+test('separate Heading 1 name does not shift body section role and employer styles',async()=>{
+  const output=await mkdtemp(join(tmpdir(),'separate-name-'));
+  try {
+    const reference=join(output,'source.docx');const imported=join(output,'imported');
+    await runPython(['-c',`from docx import Document
+from docx.shared import Inches
+import sys
+d=Document()
+s=d.sections[0];s.top_margin=s.bottom_margin=s.left_margin=s.right_margin=Inches(0.75)
+d.add_paragraph('Example Candidate',style='Heading 1')
+d.add_paragraph('Example City | candidate@example.com')
+d.add_paragraph('Documentation Lead')
+d.add_paragraph('Summary',style='Heading 2')
+d.add_paragraph('Reviewed example summary.')
+d.add_paragraph('Experience',style='Heading 2')
+d.add_paragraph('Writer',style='Heading 3')
+d.add_paragraph('Example Company | 2020–Present',style='Heading 4')
+d.add_paragraph('Reviewed example contribution.',style='List Bullet')
+d.save(sys.argv[1])`,reference]);
+    await runPython([fileURLToPath(new URL('../src/import_resume.py',import.meta.url)),reference,'--out',imported]);
+    assert.match(await readFile(join(imported,'resume.md'),'utf8'),/#### Example Company/);
+    const result=await build({source:join(imported,'resume.md'),template:join(imported,'template.json'),application:'separate-header',output,docxOnly:true});
+    await runPython([fileURLToPath(new URL('./verify_roundtrip.py',import.meta.url)),result.directory]);
+  } finally {await rm(output,{recursive:true,force:true});}
+});
+
 test('generic cover letters and reference round trips preserve letter formatting',async()=>{
   const output=await mkdtemp(join(tmpdir(),'cover-letter-'));
   try {

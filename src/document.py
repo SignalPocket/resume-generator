@@ -184,7 +184,7 @@ def create_from_reference(payload):
         blocks = [{'type':'identity','parts':blocks[:contact_lines+1]}] + blocks[contact_lines+1:]
     else:
         blocks[0] = {**blocks[0], 'type':'identity', 'parts':[blocks[0]]}
-    heading_offset = min([int(p.style.name[-1]) for p in originals if p.style.name.startswith('Heading ')] or [2])
+    heading_offset = min([int(p.style.name[-1]) for p in originals[1:] if p.style.name.startswith('Heading ')] or [2])
     original_types = ['paragraph' if p.text.strip() else 'blank' for p in originals] if letter else ['identity'] + [reference_kind(p,heading_offset) for p in originals[1:]]
     if letter and len(blocks) != len(originals):
         raise ValueError('Reference cover letters preserve paragraph slots; use the generic letter template when adding or removing paragraphs')
