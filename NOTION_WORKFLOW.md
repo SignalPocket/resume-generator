@@ -48,10 +48,9 @@ Official references: [Notion connection capabilities](https://developers.notion.
 
 ## 3 Prepare your own references and sources
 
-Do this once for each design, then reuse the approved sources or create a new version page when wording changes. Install Node.js 22+, Python 3.12+ and the Python requirements on the setup machine. LibreOffice is needed for local PDF previews, but the runner installs its own converter.
+Do this once for each design, then reuse the approved sources or create a new version page when wording changes. Follow the [local quick start](README.md#quick-start) to install Node.js 22+, Python 3.12+ and the Python requirements on the setup machine. Keep `RESUME_PYTHON` set to the same interpreter used for installation. LibreOffice is needed for local PDF previews, but the runner installs its own converter.
 
 ```bash
-python -m pip install -r requirements.txt
 node src/cli.mjs import /path/to/your-resume.docx --out applications/resume
 node src/cli.mjs import /path/to/your-letter.docx --type cover-letter --out applications/letter
 ```

@@ -18,13 +18,36 @@ Read **[setup, permissions, phone instructions and troubleshooting](NOTION_WORKF
 
 ## Quick start
 
-Requires Node.js 22 or newer, Python 3.12 or newer, and LibreOffice Writer for PDF export. Install the Python packages once:
+Requires [Node.js 22 or newer](https://nodejs.org/en/download), [Python 3.12 or newer](https://www.python.org/downloads/), and [LibreOffice Writer](https://www.libreoffice.org/download/download-libreoffice/) for PDF export. Unzip the download, open PowerShell in the extracted folder containing `package.json`, and check the tools:
 
 ```powershell
-python -m pip install -r requirements.txt
+node --version
+python --version
 ```
 
-The CLI uses `python` on Windows or `python3` elsewhere, falling back to `py -3` or `python` respectively when the first command does not exist. Set `RESUME_PYTHON` to the full interpreter path to select a virtual environment. Set `RESUME_SOFFICE` to the full LibreOffice executable path if it is not on PATH. These variables select tools; they do not install anything or change system permissions.
+If `python` opens the Microsoft Store or fails to start, try `py -3 --version`. Install Python if neither works. For an existing installation whose launchers fail, use its full `python.exe` path. Create an isolated environment using the working command:
+
+```powershell
+python -m venv .venv
+# If needed, replace the preceding command with py -3 -m venv .venv
+# Or: & 'C:\path\to\Python\python.exe' -m venv .venv
+$env:RESUME_PYTHON = (Resolve-Path .venv\Scripts\python.exe).Path
+& $env:RESUME_PYTHON -m pip install -r requirements.txt
+& $env:RESUME_PYTHON -c "import docx, pypdf; print('Python dependencies ready')"
+```
+
+No activation script or `npm install` is needed. Set `RESUME_PYTHON` again when opening a new terminal. On macOS/Linux, use `python3 -m venv .venv`, `export RESUME_PYTHON="$PWD/.venv/bin/python"`, and `"$RESUME_PYTHON" -m pip install -r requirements.txt`.
+
+The CLI uses `python` on Windows or `python3` elsewhere, falling back to `py -3` or `python` respectively when the first executable is missing or inaccessible. An explicitly configured interpreter must work; it does not silently fall back. Python dependency or document errors stop the build. If pip cannot resolve `pypi.org`, restore network/DNS access or use your approved package mirror, then rerun installation.
+
+If LibreOffice is not on PATH, set its executable path before PDF builds, for example:
+
+```powershell
+$env:RESUME_SOFFICE = 'C:\Program Files\LibreOffice\program\soffice.exe'
+& $env:RESUME_SOFFICE --version
+```
+
+These variables select tools; they do not install anything or change system permissions. Use `--docx-only` while setting up LibreOffice.
 
 From this folder:
 
@@ -132,6 +155,8 @@ npm test
 npm run check:public
 node scripts/verify-notion-roundtrip.mjs
 ```
+
+The public-package check inspects tracked files in a Git checkout. With a ZIP download it inspects the extracted source tree instead; Git is not required. Run `npm run check:public -- --source-tree` to check a folder you plan to distribute, including untracked files. Run this before adding personal sources or generated outputs; the source-tree check rejects those files. It skips `.git`, `node_modules`, `.venv` and `__pycache__`.
 
 The last command requires LibreOffice and exercises the complete preparation/conversion/attachment path with fictional files and an in-memory Notion service. It needs no token, makes no network calls and does not establish that your own Notion connection is configured. CI runs it on Linux, alongside reference round-trip checks and Windows/Linux unit tests. Test a fictional page in your own private setup before processing real applications.
 

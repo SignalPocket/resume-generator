@@ -1,6 +1,60 @@
 name: Test generator
 on: [push, pull_request]
 jobs:
+  zip-quick-start:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download and extract a fresh public source ZIP
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SOURCE_REPO: ${{ github.repository }}
+        shell: python
+        run: |
+          import io, os, urllib.request, zipfile
+          url = f"https://github.com/{os.environ['SOURCE_REPO']}/archive/{os.environ['SOURCE_SHA']}.zip"
+          with urllib.request.urlopen(url) as response:
+              archive = zipfile.ZipFile(io.BytesIO(response.read()))
+          archive.extractall('download')
+          folder = next(p for p in __import__('pathlib').Path('download').iterdir() if p.is_dir())
+          folder.rename('fresh-source')
+      - name: Follow isolated Python installation instructions
+        working-directory: fresh-source
+        run: |
+          python -m venv .venv
+          export RESUME_PYTHON="$PWD/.venv/bin/python"
+          "$RESUME_PYTHON" -m pip install -r requirements.txt
+          "$RESUME_PYTHON" -c "import docx, pypdf; print('Python dependencies ready')"
+          echo "RESUME_PYTHON=$RESUME_PYTHON" >> "$GITHUB_ENV"
+      - name: Install PDF converter and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libreoffice-writer fonts-liberation fonts-crosextra-carlito poppler-utils
+      - name: Test the downloaded source and both documented builds
+        working-directory: fresh-source
+        run: |
+          npm run check:public
+          npm test
+          node src/cli.mjs check examples/resume.md
+          node src/cli.mjs build examples/resume.md --application sample
+          node src/cli.mjs build examples/cover-letter.md --type cover-letter --application sample-letter
+          "$RESUME_PYTHON" test/verify_pdf.py outputs/sample/v001
+          "$RESUME_PYTHON" test/verify_cover_letter.py outputs/sample-letter/v001
+          node scripts/verify-notion-roundtrip.mjs
+          pdftoppm -png -scale-to 1600 outputs/sample/v001/resume.pdf outputs/sample/v001/page
+          pdftoppm -png -scale-to 1600 outputs/sample-letter/v001/cover-letter.pdf outputs/sample-letter/v001/page
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fresh-zip-word-pdf
+          path: fresh-source/outputs/
+          retention-days: 7
   test:
     strategy:
       matrix:
