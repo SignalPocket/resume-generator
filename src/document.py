@@ -247,17 +247,13 @@ def create_from_reference(payload):
     return final.getvalue()
 
 
-def export_pdf(docx, pdf, result):
-    from pypdf import PdfReader
-    configured = os.environ.get('RESUME_SOFFICE')
-    soffice = configured or shutil.which('libreoffice') or shutil.which('soffice')
-    if not soffice:
-        raise RuntimeError('Headless LibreOffice was not found. Install LibreOffice Writer or set RESUME_SOFFICE to soffice. No Microsoft Word automation is used.')
-    docx, pdf = Path(docx).resolve(), Path(pdf).resolve()
-    # A private profile avoids attaching to a user's open LibreOffice session.
-    with tempfile.TemporaryDirectory(prefix='resume-lo-', dir=docx.parent) as temporary:
+def run_libreoffice(soffice, docx):
+    # Keep the private profile short on Windows. Application output paths can
+    # already be close to LibreOffice's internal path limit.
+    with tempfile.TemporaryDirectory(prefix='resume-lo-') as temporary:
         profile = Path(temporary) / 'profile'
         output = Path(temporary) / 'pdf'
+        profile.mkdir()
         output.mkdir()
         process = subprocess.run([
             soffice, f'-env:UserInstallation={profile.as_uri()}',
@@ -265,12 +261,29 @@ def export_pdf(docx, pdf, result):
         ], capture_output=True, text=True, timeout=90)
         generated = output / f'{docx.stem}.pdf'
         if process.returncode or not generated.is_file():
-            raise RuntimeError(f'LibreOffice conversion failed: {process.stdout}\n{process.stderr}')
-        reader = PdfReader(generated)
-        pages = len(reader.pages)
-        if pages < 1:
-            raise RuntimeError('LibreOffice produced an empty PDF')
-        shutil.copyfile(generated, pdf)
+            return process, None
+        return process, generated.read_bytes()
+
+
+def export_pdf(docx, pdf, result):
+    from pypdf import PdfReader
+    configured = os.environ.get('RESUME_SOFFICE')
+    soffice = configured or shutil.which('libreoffice') or shutil.which('soffice')
+    if not soffice:
+        raise RuntimeError('Headless LibreOffice was not found. Install LibreOffice Writer or set RESUME_SOFFICE to soffice. No Microsoft Word automation is used.')
+    docx, pdf = Path(docx).resolve(), Path(pdf).resolve()
+    process, generated = run_libreoffice(soffice, docx)
+    diagnostic = f'{process.stdout}\n{process.stderr}'
+    if generated is None and 'User installation could not be completed.' in diagnostic:
+        process, generated = run_libreoffice(soffice, docx)
+        diagnostic = f'{process.stdout}\n{process.stderr}'
+    if generated is None:
+        raise RuntimeError(f'LibreOffice conversion failed: {diagnostic}')
+    reader = PdfReader(BytesIO(generated))
+    pages = len(reader.pages)
+    if pages < 1:
+        raise RuntimeError('LibreOffice produced an empty PDF')
+    pdf.write_bytes(generated)
     Path(result).write_text(json.dumps({'pages': pages, 'renderer': 'LibreOffice headless'}), encoding='utf-8')
 
 
@@ -287,3 +300,4 @@ if __name__ == '__main__':
         if not all([args.docx, args.pdf, args.result]):
             parser.error('pdf mode requires --docx, --pdf, and --result')
         export_pdf(args.docx, args.pdf, args.result)
+
