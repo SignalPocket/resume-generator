@@ -8,7 +8,8 @@ export function validateTemplate(t) {
     if (!Number.isFinite(t[key]) || t[key] < min || t[key] > max) throw new Error(`Template ${key} must be between ${min} and ${max}`);
   }
   if (!Number.isInteger(t.maxPages)) throw new Error('Template maxPages must be an integer');
-  for (const key of Object.keys(t)) if (!['font','referenceDocx','headerContactLines','documentType'].includes(key) && !(key in ranges)) throw new Error(`Unknown template property: ${key}`);
+  if (t.accentColor !== undefined && !/^[0-9A-Fa-f]{6}$/.test(t.accentColor)) throw new Error('Template accentColor must be a six-digit hexadecimal color');
+  for (const key of Object.keys(t)) if (!['font','accentColor','referenceDocx','headerContactLines','documentType'].includes(key) && !(key in ranges)) throw new Error(`Unknown template property: ${key}`);
   if (t.documentType !== undefined && !['resume','cover-letter'].includes(t.documentType)) throw new Error('Document type must be resume or cover-letter');
   if (t.referenceDocx !== undefined && (typeof t.referenceDocx !== 'string' || !t.referenceDocx)) throw new Error('referenceDocx must be a file path');
   if (t.headerContactLines !== undefined && (!Number.isInteger(t.headerContactLines) || t.headerContactLines < 0 || t.headerContactLines > 5)) throw new Error('headerContactLines must be between 0 and 5');
