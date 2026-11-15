@@ -194,4 +194,3 @@ test('generic cover letters and reference round trips preserve letter formatting
 test('LibreOffice export uses short private profiles and a targeted initialization retry',async()=>{
   await runPython([fileURLToPath(new URL('./test_document.py',import.meta.url))]);
 });
-
