@@ -300,4 +300,3 @@ if __name__ == '__main__':
         if not all([args.docx, args.pdf, args.result]):
             parser.error('pdf mode requires --docx, --pdf, and --result')
         export_pdf(args.docx, args.pdf, args.result)
-
