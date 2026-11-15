@@ -107,6 +107,8 @@ Degree | University
 
 Use one `#` candidate name, `##` sections, `###` role headings, paragraphs, `-` or `*` bullets, `**bold**` and `[label](https://url)` links. Blank lines separate paragraphs. Wrapped lines become a single paragraph. Put `<!-- pagebreak -->` on a line by itself for a deliberate page break.
 
+The committed fictional resume is intentionally long enough to render as a two-page example without a forced page break. Its sidecar template uses one font and one navy accent for every heading and link without changing the reusable default template. Use `<!-- pagebreak -->` when a reviewed document needs a specific transition instead of natural pagination. Font substitution can move a natural break, so verify the actual PDF on the rendering machine.
+
 Unsupported structures, including nested lists, tables, HTML, images and code, produce an error rather than silently dropping content. Contact information stays in the body. Headings and list numbering use real Word semantics. Text uses one column without layout tables or text boxes.
 
 ## Cover Letters
@@ -118,7 +120,9 @@ node src/cli.mjs import path/to/approved-letter.docx --type cover-letter --out a
 node src/cli.mjs build applications/letter-reference/cover-letter.md --template applications/letter-reference/template.json --application letter-roundtrip
 ```
 
-Cover letters use ordinary paragraphs, optional name headings, bold emphasis and links. A trailing pair of spaces or backslash creates a hard line break for recipient and sign-off lines. `<!-- blank -->` preserves an intentionally blank reference paragraph. A letter does not need resume sections. The default letter template uses 11 pt Arial, one-inch margins, 1.15 line spacing, left alignment and a one-page target. Imported references retain their approved formatting instead.
+Cover letters use ordinary paragraphs, optional name or subject headings, bold emphasis and links. A trailing pair of spaces or backslash creates a hard line break for recipient and sign-off lines. `<!-- blank -->` preserves an intentionally blank reference paragraph. A letter does not need resume sections. The default letter template uses 11 pt Arial, one-inch margins, 1.15 line spacing, left alignment and a one-page target. Imported references retain their approved formatting instead.
+
+The committed fictional cover letter is a fuller one-page companion to the operations project manager resume. Its sidecar template uses the same font and navy heading treatment as the resume while retaining a one-page target.
 
 Letter versions contain `cover-letter.docx`, `cover-letter.pdf`, `cover-letter.txt`, `source.md`, `template.json`, and `manifest.json`. Imported versions also save `reference.docx`. Reference letters preserve paragraph slots; use the generic letter template when adding or removing paragraphs. The tool formats already-reviewed content; it does not write or submit an application.
 
@@ -136,7 +140,7 @@ The public examples are fictional. Run `node scripts/check-public-package.mjs` b
 
 ## Validation status
 
-Automated tests cover Markdown preservation, invalid input, python-docx output structure, concurrent version creation, source preservation, PDF failure cleanup and page-limit warnings. The included sample can be built with `--docx-only` without LibreOffice.
+Automated tests cover Markdown preservation, invalid input, python-docx output structure, concurrent version creation, source preservation, PDF failure cleanup and page-limit warnings. The real-PDF checks require the committed resume to render as two pages and the cover letter as one page. Either sample can be built with `--docx-only` without LibreOffice, but that mode does not verify pagination.
 
 GitHub Actions also installs the same headless publishing tools used by Greenhouse, builds the fictional sample into Word and PDF, checks text reading order, hyperlinks and pagination, renders page images, and saves the `sample-word-pdf` artifact for review. It does not publish a website. Only the committed fictional sample is built there; local application sources and outputs stay ignored by Git. Review the rendered pages before using a new template or application version.
 
@@ -145,6 +149,8 @@ The publishing approach follows an existing docs-as-code portfolio workflow, ada
 ## Source profiles and limits
 
 Save `resume.template.json` beside `resume.md` (or `cover-letter.template.json` beside `cover-letter.md`) to select a design automatically. An explicit `--template` overrides the sidecar. Invalid profiles fail rather than falling back silently. Reference paths resolve relative to their profile.
+
+The committed examples use sidecar templates for their typography and single accent color. These profiles apply only to the examples and do not change the reusable defaults in `templates/`. Set optional `accentColor` to a six-digit hexadecimal value to color all generic-document headings and links consistently; omit it for black.
 
 This is a formatter with a small Markdown dialect, not a graphical editor or a job-posting analyzer. The optional Notion workflow uploads sources and attaches generated documents; it does not tailor claims or submit applications. Review wording, rights to any samples and actual final pages before use. Font substitution can change pagination between computers.
 
