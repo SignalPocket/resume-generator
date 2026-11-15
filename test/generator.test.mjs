@@ -45,6 +45,9 @@ test('DOCX includes real list numbering, heading styles and escaped hyperlink ta
   assert.ok(Object.keys(entries).length>=6);
   assert.match(entries['word/document.xml'], /w:pStyle w:val="ListBullet"/);
   assert.match(entries['word/styles.xml'], /<w:numPr>/);
+  assert.match(entries['word/numbering.xml'], /w:lvlText w:val="•"/);
+  assert.match(entries['word/numbering.xml'], /w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/);
+  assert.ok(!entries['word/numbering.xml'].includes('Symbol'));
   assert.match(entries['word/document.xml'], /w:hyperlink r:id=/);
   assert.match(entries['word/styles.xml'], /w:outlineLvl/);
   assert.ok(!entries['word/document.xml'].includes('<w:tbl>'));
@@ -98,6 +101,8 @@ test('invalid template cannot create a build directory',async()=>{
     const template=join(output,'invalid.json');
     await writeFile(template,JSON.stringify({font:'Arial',bodySize:4}));
     await assert.rejects(build({source:example,application:'invalid',output,template,docxOnly:true}),/Template/);
+    await writeFile(template,JSON.stringify({font:'Arial',bodySize:11,nameSize:18,sectionSize:12,marginInches:1,paragraphAfterPt:4,sectionBeforePt:8,lineSpacing:1.15,maxPages:2,accentColor:'navy'}));
+    await assert.rejects(build({source:example,application:'invalid',output,template,docxOnly:true}),/accentColor/);
     assert.deepEqual(await readdir(output),['invalid.json']);
   } finally { await rm(output,{recursive:true,force:true}); }
 });
@@ -179,7 +184,8 @@ test('generic cover letters and reference round trips preserve letter formatting
   const output=await mkdtemp(join(tmpdir(),'cover-letter-'));
   try {
     const source=new URL('../examples/cover-letter.md',import.meta.url);
-    const generic=await build({source,application:'letter',documentType:'cover-letter',output,docxOnly:true});
+    const template=new URL('../templates/cover-letter.json',import.meta.url);
+    const generic=await build({source,template,application:'letter',documentType:'cover-letter',output,docxOnly:true});
     assert.equal(generic.documentType,'cover-letter');
     const original=join(generic.directory,'cover-letter.docx');
     await runPython(['-c',"from docx import Document; import sys; d=Document(sys.argv[1]); assert d.styles['Normal'].paragraph_format.line_spacing==1.15; assert all(p.alignment != 1 for p in d.paragraphs); assert any('Sincerely,\\nExample Candidate' in p.text for p in d.paragraphs)",original]);
