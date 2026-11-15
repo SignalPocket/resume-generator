@@ -1,0 +1,12 @@
+{
+  "font": "Calibri",
+  "bodySize": 10.5,
+  "nameSize": 20,
+  "sectionSize": 12,
+  "accentColor": "17365D",
+  "marginInches": 0.72,
+  "paragraphAfterPt": 3,
+  "sectionBeforePt": 8,
+  "lineSpacing": 1.05,
+  "maxPages": 2
+}
