@@ -1,0 +1,13 @@
+{
+  "documentType": "cover-letter",
+  "font": "Calibri",
+  "bodySize": 10.5,
+  "nameSize": 16,
+  "sectionSize": 11,
+  "accentColor": "17365D",
+  "marginInches": 0.9,
+  "paragraphAfterPt": 7,
+  "sectionBeforePt": 6,
+  "lineSpacing": 1.12,
+  "maxPages": 1
+}
