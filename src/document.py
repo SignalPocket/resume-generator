@@ -27,19 +27,25 @@ from docx.shared import Inches, Pt, RGBColor
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 
 
-def font(style, name, size):
+def font(style, name, size, color='000000'):
     style.font.name = name
     style.font.size = Pt(size)
-    style.font.color.rgb = RGBColor(0, 0, 0)
+    style.font.color.rgb = RGBColor.from_string(color)
+    properties = style.element.get_or_add_rPr()
+    fonts = properties.get_or_add_rFonts()
     for key in ('ascii', 'hAnsi', 'eastAsia', 'cs'):
-        style.element.get_or_add_rPr().rFonts.set(qn(f'w:{key}'), name)
+        fonts.set(qn(f'w:{key}'), name)
+    for key in ('asciiTheme', 'hAnsiTheme', 'eastAsiaTheme', 'cstheme'):
+        fonts.attrib.pop(qn(f'w:{key}'), None)
 
 
-def add_run(paragraph, data):
+def add_run(paragraph, data, link_color=None):
     run = paragraph.add_run(data['text'])
     if data.get('bold'):
         run.bold = True
     if data.get('href'):
+        if link_color:
+            run.font.color.rgb = RGBColor.from_string(link_color)
         relation = paragraph.part.relate_to(
             data['href'],
             'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
@@ -52,10 +58,30 @@ def add_run(paragraph, data):
         paragraph._p.append(link)
 
 
+def set_bullet_font(doc, name):
+    for level in doc.part.numbering_part.element.xpath('.//w:lvl[w:numFmt[@w:val="bullet"]]'):
+        marker = level.find(qn('w:lvlText'))
+        if marker is not None:
+            marker.set(qn('w:val'), '\u2022')
+        properties = level.find(qn('w:rPr'))
+        if properties is None:
+            properties = OxmlElement('w:rPr')
+            level.append(properties)
+        fonts = properties.find(qn('w:rFonts'))
+        if fonts is None:
+            fonts = OxmlElement('w:rFonts')
+            properties.insert(0, fonts)
+        for key in ('ascii', 'hAnsi', 'eastAsia', 'cs'):
+            fonts.set(qn(f'w:{key}'), name)
+        for key in ('asciiTheme', 'hAnsiTheme', 'eastAsiaTheme', 'cstheme'):
+            fonts.attrib.pop(qn(f'w:{key}'), None)
+
+
 def create_docx(payload):
     if payload.get('reference'):
         return create_from_reference(payload)
     settings = payload['settings']
+    accent = settings.get('accentColor', '000000').upper()
     doc = Document()
     section = doc.sections[0]
     section.page_width, section.page_height = Inches(8.5), Inches(11)
@@ -66,9 +92,9 @@ def create_docx(payload):
     normal.paragraph_format.space_after = Pt(settings['paragraphAfterPt'])
     normal.paragraph_format.line_spacing = settings['lineSpacing']
     normal.paragraph_format.widow_control = True
-    for name, size in [('Title', settings['nameSize']), ('Heading 1', settings['sectionSize']), ('Heading 2', settings['bodySize'])]:
+    for name, size in [('Title', settings['nameSize']), ('Heading 1', settings['sectionSize']), ('Heading 2', settings['bodySize']), ('Heading 3', settings['bodySize'])]:
         style = doc.styles[name]
-        font(style, settings['font'], size)
+        font(style, settings['font'], size, accent)
         style.font.bold = True
         style.paragraph_format.keep_with_next = True
         style.paragraph_format.keep_together = True
@@ -82,6 +108,7 @@ def create_docx(payload):
     bullet.paragraph_format.space_after = Pt(2)
     bullet.paragraph_format.left_indent = Inches(0.17)
     bullet.paragraph_format.first_line_indent = Inches(-0.13)
+    set_bullet_font(doc, settings['font'])
     in_header = settings.get('documentType') != 'cover-letter'
     styles = {'name': 'Title', 'section': 'Heading 1', 'role': 'Heading 2', 'employer': 'Heading 3', 'bullet': 'List Bullet', 'paragraph': 'Normal', 'blank':'Normal'}
     for block in payload['blocks']:
@@ -94,7 +121,7 @@ def create_docx(payload):
         if in_header:
             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for data in block['runs']:
-            add_run(paragraph, data)
+            add_run(paragraph, data, accent)
     doc.core_properties.author = ''
     doc.core_properties.last_modified_by = ''
     doc.core_properties.title = 'Cover Letter' if settings.get('documentType') == 'cover-letter' else 'Resume'
